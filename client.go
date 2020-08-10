@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func getHawkeyeTarget() *url.URL {
+func GetHawkeyeTarget() *url.URL {
 	rawURL := os.Getenv("TUPLESTREAM_HAWKEYE_TARGET")
 	if rawURL == "" {
 		rawURL = "https://incoming.tuplestream.com"
@@ -21,8 +21,8 @@ func getHawkeyeTarget() *url.URL {
 	return u
 }
 
-func initiateConnection(filename string) (net.Conn, *bufio.Writer) {
-	hawkeyeTarget := getHawkeyeTarget()
+func InitiateConnection(filename string) (net.Conn, *bufio.Writer) {
+	hawkeyeTarget := GetHawkeyeTarget()
 	conn, err := net.Dial("tcp", hawkeyeTarget.Host)
 
 	if err != nil {
@@ -30,7 +30,7 @@ func initiateConnection(filename string) (net.Conn, *bufio.Writer) {
 		return nil, nil
 	}
 
-	req, err := http.NewRequest("GET", getHawkeyeTarget().String(), nil)
+	req, err := http.NewRequest("GET", GetHawkeyeTarget().String(), nil)
 	handleErr(err)
 
 	req.Header.Add("Connection", "Upgrade")
