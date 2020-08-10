@@ -9,6 +9,7 @@ jobs:
       - run:
           name: build and test source
           command: |
+            export CGO_ENABLED=0
             go vet
             go build .
   bump_version:
