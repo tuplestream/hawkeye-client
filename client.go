@@ -12,10 +12,6 @@ import (
 	"os"
 )
 
-type TenantCredentials struct {
-	token string
-}
-
 func GetHawkeyeTarget() *url.URL {
 	rawURL := os.Getenv("TUPLESTREAM_HAWKEYE_TARGET")
 	if rawURL == "" {
