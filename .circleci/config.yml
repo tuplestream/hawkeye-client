@@ -12,7 +12,7 @@ jobs:
             export CGO_ENABLED=0
             go vet
             apk add curl jq
-            export TUPLESTREAM_KEY=$(curl --request POST --url 'https://dev-ak43b46u.eu.auth0.com/oauth/token' -H 'content-type: application/x-www-form-urlencoded' --data grant_type=password --data 'password=$DUMMY_PASSWORD' --data username=$DUMMY_EMAIL --data audience=$DUMMY_AUDIENCE --data scope=logstream --data client_id=$DUMMY_CLIENT_ID --data client_secret=$DUMMY_CLIENT_SECRET | jq -r '.access_token')
+            export TUPLESTREAM_KEY=$(curl -i --request POST --url 'https://dev-ak43b46u.eu.auth0.com/oauth/token' -H 'content-type: application/x-www-form-urlencoded' --data grant_type=password --data 'password=$DUMMY_PASSWORD' --data username=$DUMMY_EMAIL --data audience=$DUMMY_AUDIENCE --data scope=logstream --data client_id=$DUMMY_CLIENT_ID --data client_secret=$DUMMY_CLIENT_SECRET)
             echo $TUPLESTREAM_KEY
   bump_version:
     docker:
