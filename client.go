@@ -2,6 +2,7 @@ package hawkeye
 
 import (
 	"bufio"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +12,10 @@ import (
 	"os"
 )
 
+type TenantCredentials struct {
+	token string
+}
+
 func GetHawkeyeTarget() *url.URL {
 	rawURL := os.Getenv("TUPLESTREAM_HAWKEYE_TARGET")
 	if rawURL == "" {
@@ -18,15 +23,36 @@ func GetHawkeyeTarget() *url.URL {
 	}
 	u, e := url.Parse(rawURL)
 	handleErr(e)
+
+	if u.Port() == "" {
+		var presumedPort string
+		if u.Scheme == "http" {
+			presumedPort = "80"
+		} else if u.Scheme == "https" {
+			presumedPort = "443"
+		} else {
+			log.Panic("Unsupported scheme for target " + u.Scheme)
+		}
+
+		u, e = url.Parse(fmt.Sprintf("%s://%s:%s/%s", u.Scheme, u.Hostname(), presumedPort, u.Path))
+	}
 	return u
 }
 
-func InitiateConnection(filename string) (net.Conn, *bufio.Writer) {
+func InitiateConnection(filename string, auth string) (net.Conn, *bufio.Writer) {
 	hawkeyeTarget := GetHawkeyeTarget()
-	conn, err := net.Dial("tcp", hawkeyeTarget.Host)
+	host := hawkeyeTarget.Hostname() + ":" + hawkeyeTarget.Port()
+	var conn net.Conn
+	var err error
+
+	if hawkeyeTarget.Scheme == "https" {
+		conn, err = tls.Dial("tcp", host, nil)
+	} else {
+		conn, err = net.Dial("tcp", host)
+	}
 
 	if err != nil {
-		log.Print("error connecting to " + hawkeyeTarget.Host)
+		log.Panic("error connecting to " + host)
 		return nil, nil
 	}
 
@@ -37,7 +63,9 @@ func InitiateConnection(filename string) (net.Conn, *bufio.Writer) {
 	req.Header.Add("Upgrade", "hawkeye/1.0.0alpha1")
 	req.Header.Add("User-Agent", "hawkeye/client-go1.0.0alpha1")
 
-	handleErr(err)
+	if auth != "" {
+		req.Header.Add("Authorization", "Bearer "+auth)
+	}
 
 	writer := bufio.NewWriter(conn)
 	reader := bufio.NewReader(conn)
@@ -51,8 +79,6 @@ func InitiateConnection(filename string) (net.Conn, *bufio.Writer) {
 		log.Fatal("Couldn't upgrade HTTP connection, closing. Got status: " + resp.Status)
 	}
 	handleErr(err)
-
-	fmt.Println(resp.Status)
 
 	controlMessage := make(map[string]string)
 	encoder := json.NewEncoder(writer)
